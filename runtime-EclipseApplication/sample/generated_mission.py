@@ -34,19 +34,20 @@ class turtle():
         goal_pose.y = posY
         distance_tolerance = self.tolerance
         vel_msg = Twist()
-        zVelLast = 0.0
+        angErrorLast = 0.0
         while sqrt(pow((goal_pose.x - self.pose.x), 2) + pow((goal_pose.y - self.pose.y), 2)) >= distance_tolerance:
-            #Porportional Controller
+            #Proportional Controller
             #linear velocity in the x-axis:
-            vel_msg.linear.x = 1* sqrt(pow((goal_pose.x - self.pose.x), 2) + pow((goal_pose.y - self.pose.y), 2))
+            vel_msg.linear.x = 1.0 * sqrt(pow((goal_pose.x - self.pose.x), 2) + pow((goal_pose.y - self.pose.y), 2))
             vel_msg.linear.y = 0
             vel_msg.linear.z = 0
 
             #angular velocity in the z-axis:
+            angError = atan2(goal_pose.y - self.pose.y, goal_pose.x - self.pose.x) - self.pose.theta
             vel_msg.angular.x = 0
             vel_msg.angular.y = 0
-            zVel =  atan2(goal_pose.y - self.pose.y, goal_pose.x - self.pose.x)
-            vel_msg.angular.z = 4 * (atan2(goal_pose.y - self.pose.y, goal_pose.x - self.pose.x) - self.pose.theta)
+            vel_msg.angular.z = 4.0 * angError - 2.0 *(angError - angErrorLast)
+            angErrorLast = angError
             #Publishing our vel_msg
             self.velocity_publisher.publish(vel_msg)
             self.rate.sleep()
@@ -55,17 +56,44 @@ class turtle():
         vel_msg.angular.z =0
         self.velocity_publisher.publish(vel_msg)
 
-def create_list_from_mission_plan(mission_plan):
-    coordinates = []
-    for mission in mission_plan :
-        currTask = mission[0]
-        currWayPoints = mission[1]
-        if currTask is 'SHORTESTPATH' :
-            currWayPoints = currWayPoints
-        for wp in currWayPoints :
-            coordinates.append(wp)
+    def create_list_from_mission_plan(self, mission_plan):
+        coordinates = []
+        for mission in mission_plan :
+            currTask = mission[0]
+            currWayPoints = mission[1]
+            if currTask is 'SHORTESTPATH' :
+                if not coordinates :
+                    startPoint = (self.pose.x, self.pose.y)
+                else :
+                    startPoint = coordinates[-1]
+                currWayPoints = tsp_sort(startPoint, currWayPoints)
+            for wp in currWayPoints :
+                coordinates.append(wp)
+        return coordinates
 
-    return coordinates
+def tsp_sort(startPoint, currWayPoints):
+    sortedList = []
+    xC, yC = startPoint
+    workingList = currWayPoints
+    while workingList :
+        nWaypoins = len(workingList)
+        if nWaypoins == 1:
+            sortedList.append(workingList[0])
+            workingList = []
+        else :
+            minDist = 100;
+            for idx in range(0,nWaypoins) :
+                xI, yI = workingList[idx]
+                distI = sqrt(pow(xC - xI,2) + pow(yC-yI,2))
+                if distI == min(distI,minDist) :
+                    minDistIdx = idx
+                    minDist = distI
+
+            sortedList.append(workingList[minDistIdx])
+            xC, yC = workingList[minDistIdx]
+            del workingList[minDistIdx]
+
+    return sortedList     
 
 if __name__ == '__main__':
     try:
@@ -73,14 +101,13 @@ if __name__ == '__main__':
         tb = turtle()
     #list of coordinates to visit
     #This can is the only thing to change in the model to text
-    	mission = [['START', [(1,1)]],['LINE', [(1,3),(3,3)]],['SHORTESTPATH', [(6,5),(2,2),(6,3),(2,5)]],['RETURNTOSTART', [(1,1)]],['LINE', [(5,1)]],['SHORTESTPATH', [(6,5),(3,7),(6,2)]],['LINE', [(3,4)]],['RETURNTOSTART', [(1,1)]]]
-        coordinate_list = create_list_from_mission_plan(mission)
+    	mission = [['START', [(1,1)]],['LINE', [(1,3),(3,4)]],['SHORTESTPATH', [(6,5),(2,2),(6,3),(2,5)]],['RETURNTOSTART', [(1,1)]],['LINE', [(5,3)]],['SHORTESTPATH', [(6,5),(3,7),(6,3)]],['LINE', [(3,4)]],['RETURNTOSTART', [(1,1)]]]
+        coordinate_list = tb.create_list_from_mission_plan(mission)
     #making the the turtle follow the coordinates in sequence
         for coordinate in coordinate_list:
            x,y = coordinate
            print("x: %f" %x)
            print("y: %f" %y)
            tb.move2goal(x,y)
-
 
     except rospy.ROSInterruptException: pass

@@ -11,12 +11,12 @@ TurtleBot test{
 	waypoints = {
 		ParkingLot W0 (x=1, y=1),
 		GasStation W1 ( x=1, y=3 ),
-		Storage&GasStation Frankfurt ( x=10, y=1 ),
-		Storage Berlin ( x=3, y=10 ),
+		Storage&GasStation Frankfurt ( x=5, y=1 ),
+		Storage Berlin ( x=3, y=4 ),
 		Customer C1 ( x=6, y=5 ),
-		Customer C2 ( x=10, y=5 ),
+		Customer C2 ( x=2, y=5 ),
 		Customer C3 ( x=6, y=2 ),
-		Customer C4 ( x=2, y=8 ),
+		Customer C4 ( x=2, y=5 ),
 		Customer C5 ( x=3, y=7 )
 	}
 	
