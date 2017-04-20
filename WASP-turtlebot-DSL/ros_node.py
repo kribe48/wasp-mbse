@@ -3,6 +3,7 @@ import rospy
 from geometry_msgs.msg  import Twist
 from turtlesim.msg import Pose
 from math import pow,atan2,sqrt
+from enum import Enum
 
 class turtle():
     def __init__(self):
@@ -12,8 +13,8 @@ class turtle():
         self.pose_subscriber = rospy.Subscriber('/turtle1/pose', Pose, self.callback)
         self.pose = Pose()
         self.rate = rospy.Rate(10)
-	#This is the tolerance of the controller, because the turtlesim is not the most accurate simulator
-	self.tolerance = 0.1
+    #This is the tolerance of the controller, because the turtlesim is not the most accurate simulator
+    self.tolerance = 0.1
 
     #Callback function implementing the pose value received
     #This saves the current position of the turtle in global coordinate system
@@ -54,21 +55,29 @@ class turtle():
         vel_msg.angular.z =0
         self.velocity_publisher.publish(vel_msg)
 
+def create_list_from_mission_plan(mission_plan):
+    coordinates = []
+    for mission in mission_plan :
+        currTask = mission[0]
+        currWayPoints = mission[1]
+        if currTask is 'SHORTESTPATH' :
+            currWayPoints = currWayPoints
+        for wp in currWayPoints :
+            coordinates.append(wp)
+
+    return coordinates
+
 if __name__ == '__main__':
     try:
-        #Testing our function
-	#creating a turtle object        
-	tb = turtle()
-	
-	
-	#list of coordinates to visit
-	#This can is the only thing to change in the model to text
-	coordinate_list = [(1,1),(1,2),(3,3),(6,6),(10,10),(1,1)]
-	
-
-	#making the the turtle follow the coordinates in sequence	
-	for coordinate in coordinate_list:
-		x,y = coordinate
-        	tb.move2goal(x,y)
+    #creating a turtle object
+        tb = turtle()
+    #list of coordinates to visit
+    #This can is the only thing to change in the model to text
+        mission = [['START', [(1,1)]], ['SHORTESTPATH', [(1,2),(3,4)]], ['RETURNTOSTART', [(1,1)]], ['SHORTESTPATH', [(1,2),(10,5)]], ['LINE', [(3,4)]], ['RETURNTOSTART', [(1,1)]]]
+        coordinate_list = create_list_from_mission_plan(mission)
+    #making the the turtle follow the coordinates in sequence
+        for coordinate in coordinate_list:
+           x,y = coordinate
+           tb.move2goal(x,y)
 
     except rospy.ROSInterruptException: pass
