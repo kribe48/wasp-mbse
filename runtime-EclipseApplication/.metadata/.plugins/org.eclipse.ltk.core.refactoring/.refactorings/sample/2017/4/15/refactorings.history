@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<session version="1.0">
+<refactoring comment="Rename resource &apos;sample/src/Sample.mydsl&apos; to &apos;Sample.turtlebotmissionDSL&apos;" description="Rename resource &apos;Sample.mydsl&apos;" flags="7" id="org.eclipse.ltk.core.refactoring.rename.resource" input="src/Sample.mydsl" name="Sample.turtlebotmissionDSL" stamp="1492069940717" updateReferences="true"/>
+</session>

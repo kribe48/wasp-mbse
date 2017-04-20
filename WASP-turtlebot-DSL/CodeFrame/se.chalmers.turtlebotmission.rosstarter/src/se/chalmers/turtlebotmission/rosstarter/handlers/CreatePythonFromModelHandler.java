@@ -31,12 +31,25 @@ import turtlebotmission.TurtleBot;
 import turtlebotmission.WayPoint;
 import turtlebotmission.impl.TurtleBotImpl;
 
+
 /**
  * A handler that is called when the user clicks on the turtlebot icon in the menu.
  * Allows to calculate a list of waypoints to visit and then initiates the creation of the Python file.
  * 
  */
 public class CreatePythonFromModelHandler extends AbstractHandler {
+	
+	/**
+	 * Auxiliary data structures
+	 */
+	private static class TGroup {
+		public String taskid;
+		public ArrayList<WayPoint> waypoints = new ArrayList<WayPoint>();
+	}
+	private static class SimpleWayPoint {
+		public int xcoord;
+		public int ycoord;
+	}
 
 	/**
 	 * Called whenever a user clicks on the turtlebot icon
@@ -65,12 +78,58 @@ public class CreatePythonFromModelHandler extends AbstractHandler {
 								MessageDialog.openInformation(window.getShell(), "Launch ROS",
 										"You will find the resulting file in this workspace, in generated_mission.py");
 								
+												
+																
+								ArrayList<TGroup> missions = new ArrayList<>();	
 								
-								//This is were you should parse the model, create a plan, and fill the string template
-								//Don't hesitate to use extra classes and methods to structure your code
-								String pythoncode = "This is a placeholder";
+								SimpleWayPoint tbStart = new SimpleWayPoint();
+								tbStart.xcoord = turtle.getBot_start().getCoord_x();
+								tbStart.ycoord = turtle.getBot_start().getCoord_y();
+
+								TGroup tg = new TGroup();
+								tg.taskid = "START";
+								tg.waypoints.add(turtle.getBot_start());
+
+								missions.add(tg);
+
+								STGroup group = new STGroupFile("/templates/ros_node.stg");
+								ST st = group.getInstanceOf("main");
+								st.add("missions", missions);
 								
 								
+								TGroup[] tasks = new TGroup[100];
+								for (int i = 0; i < tasks.length; i++) {
+									tasks[i] = new TGroup();
+								}								
+								int i = 0;							   
+								for (Mission mission : turtle.getMissions()) {							
+									for (Task task : mission.getTask()) {
+										tasks[i] = new TGroup();
+										if (task instanceof ShortestPathTask) {
+											ShortestPathTask t = (ShortestPathTask) task;
+											tasks[i].taskid = "SHORTESTPATH";
+											for (WayPoint wp : t.getWaypoints()) {
+												tasks[i].waypoints.add(wp);												
+											}
+										}
+										else if (task instanceof ReturnToStartTask) {
+											ReturnToStartTask t = (ReturnToStartTask) task;
+											tasks[i].taskid = "RETURNTOSTART";
+											tasks[i].waypoints.add(turtle.getBot_start());			
+										}
+										else if (task instanceof LineTask) {
+											LineTask t = (LineTask) task;
+											tasks[i].taskid = "LINE";
+											for (WayPoint wp : t.getWaypoints()) {
+												tasks[i].waypoints.add(wp);												
+											}
+										}
+										missions.add(tasks[i]);
+										i += 1;
+									}
+								}
+
+								String pythoncode = st.render(); 							
 								
 								IWorkspaceRoot myWorkspaceRoot = ResourcesPlugin.getWorkspace().getRoot();
 								IProject myProject = myWorkspaceRoot.getProjects()[0];
